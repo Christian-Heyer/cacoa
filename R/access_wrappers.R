@@ -84,14 +84,16 @@ extractRawCountMatrices.Conos <- function(object, transposed=TRUE) {
 }
 
 #' @rdname extractRawCountMatrices
+#' @rdname extractRawCountMatrices
 extractRawCountMatrices.Seurat <- function(object, transposed=TRUE) {
   cms <- object$sample.per.cell %>% {split(names(.), .)} %>%
-    lapply(function(cids) object@assays[[object@misc$assay.name]]@counts[,cids])
+    lapply(function(cids) object[[object@misc$assay.name]]@counts[, cids])
   if (transposed) {
-    cms %<>% lapply(Matrix::t)
+    cms <- lapply(cms, Matrix::t)
   }
-  return(cms)
-}
+  cms
+
+
 
 #' @rdname extractRawCountMatrices
 extractRawCountMatrices.dgCMatrix <- function(object, transposed=TRUE) {
