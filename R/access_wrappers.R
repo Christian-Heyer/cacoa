@@ -10,8 +10,8 @@ extractCellGroups <- function(object) UseMethod("extractCellGroups", object)
 
 #' @rdname extractCellGroups
 extractCellGroups.Conos <- function(object) {
-  if(is.null(object$clusters)) {
-    stop('No cell groups specified and no clusterings found')
+  if (is.null(object$clusters)) {
+    stop("No cell groups specified and no clusterings found")
   }
   return(as.factor(object$clusters[[1]]$groups))
 }
@@ -20,7 +20,7 @@ extractCellGroups.Conos <- function(object) {
 extractCellGroups.Seurat <- function(object) {
   groups <- Seurat::Idents(object)
   if (length(unique(groups)) <= 1) {
-    stop('No cell groups specified and no clusterings found')
+    stop("No cell groups specified and no clusterings found")
   }
   return(as.factor(groups))
 }
@@ -38,7 +38,7 @@ extractCellGraph <- function(object) UseMethod("extractCellGraph", object)
 #' @rdname extractCellGraph
 extractCellGraph.Conos <- function(object) {
   if (is.null(object$graph)) {
-    stop('No cell graph found in the object')
+    stop("No cell graph found in the object")
   }
   return(object$graph)
 }
@@ -47,13 +47,13 @@ extractCellGraph.Conos <- function(object) {
 extractCellGraph.Seurat <- function(object) {
   graph.name <- object@misc$graph.name
   if (!is.null(graph.name)) {
-    if (is.null(object@graphs[[graph.name]])){
+    if (is.null(object@graphs[[graph.name]])) {
       stop("Cannot find graph ", graph.name)
     }
     adj.mat <- object@graphs[[graph.name]]
   } else {
     if (length(object@graphs) == 0) {
-      stop('No cell graph found in the object')
+      stop("No cell graph found in the object")
     }
     adj.mat <- object@graphs[[1]]
   }
@@ -63,7 +63,7 @@ extractCellGraph.Seurat <- function(object) {
     warning("The provided adjacency matrix is not symmetric. Converting it to undirected graph.")
     adj.mat <- (adj.mat + t(adj.mat)) / 2
   }
-  graph <- igraph::graph_from_adjacency_matrix(adj.mat, mode="undirected", weighted=TRUE)
+  graph <- igraph::graph_from_adjacency_matrix(adj.mat, mode = "undirected", weighted = TRUE)
   return(graph)
 }
 
@@ -76,30 +76,37 @@ extractCellGraph.Seurat <- function(object) {
 #' @param transposed boolean Whether the raw count matrix should be transposed (default=TRUE)
 #' @rdname extractRawCountMatrices
 #' @export
-extractRawCountMatrices <- function(object, transposed=TRUE) UseMethod("extractRawCountMatrices", object)
+extractRawCountMatrices <- function(object, transposed = TRUE) UseMethod("extractRawCountMatrices", object)
 
 #' @rdname extractRawCountMatrices
-extractRawCountMatrices.Conos <- function(object, transposed=TRUE) {
-  return(lapply(object$samples, conos::getRawCountMatrix, transposed=transposed))
+extractRawCountMatrices.Conos <- function(object, transposed = TRUE) {
+  return(lapply(object$samples, conos::getRawCountMatrix, transposed = transposed))
 }
 
 #' @rdname extractRawCountMatrices
 #' @rdname extractRawCountMatrices
-extractRawCountMatrices.Seurat <- function(object, transposed=TRUE) {
-  cms <- object$sample.per.cell %>% {split(names(.), .)} %>%
+extractRawCountMatrices.Seurat <- function(object, transposed = TRUE) {
+  cms <- object$sample.per.cell %>%
+    {
+      split(names(.), .)
+    } %>%
     lapply(function(cids) object[[object@misc$assay.name]]@counts[, cids])
   if (transposed) {
     cms <- lapply(cms, Matrix::t)
   }
   cms
+}
 
 
 
 #' @rdname extractRawCountMatrices
-extractRawCountMatrices.dgCMatrix <- function(object, transposed=TRUE) {
-  sample.per.cell <- attr(object, 'sample.per.cell')
-  cms <- sample.per.cell %>% {split(names(.), .)} %>%
-    lapply(function(cids) object[cids,])
+extractRawCountMatrices.dgCMatrix <- function(object, transposed = TRUE) {
+  sample.per.cell <- attr(object, "sample.per.cell")
+  cms <- sample.per.cell %>%
+    {
+      split(names(.), .)
+    } %>%
+    lapply(function(cids) object[cids, ])
   if (!transposed) {
     cms %<>% lapply(Matrix::t)
   }
@@ -116,23 +123,23 @@ extractRawCountMatrices.dgCMatrix <- function(object, transposed=TRUE) {
 #' @param ... additional parameters to be passed to extractJointCountMatrix
 #' @rdname extractJointCountMatrix
 #' @export
-extractJointCountMatrix <- function(object, raw=TRUE, ...) UseMethod("extractJointCountMatrix", object)
+extractJointCountMatrix <- function(object, raw = TRUE, ...) UseMethod("extractJointCountMatrix", object)
 
 #' @rdname extractJointCountMatrix
-extractJointCountMatrix.Conos <- function(object, raw=TRUE) {
-  return(object$getJointCountMatrix(raw=raw))
+extractJointCountMatrix.Conos <- function(object, raw = TRUE) {
+  return(object$getJointCountMatrix(raw = raw))
 }
 
 #' @param transposed boolean If TRUE, return merged transposed count matrices (default=TRUE)
 #' @param sparse boolean If TRUE, return merged the sparse dgCMatrix matrix (default=TRUE)
 #' @rdname extractJointCountMatrix
-extractJointCountMatrix.Seurat <- function(object, raw=TRUE, transposed=TRUE, sparse=TRUE) {
+extractJointCountMatrix.Seurat <- function(object, raw = TRUE, transposed = TRUE, sparse = TRUE) {
   # TODO: Seurat v5 deprecated `slot` in favor of `layer`
   if (raw) {
-    dat <- object %>% 
-      Seurat::GetAssayData(slot='counts', assay=.@misc$assay.name) %>%
+    dat <- object %>%
+      Seurat::GetAssayData(slot = "counts", assay = .@misc$assay.name) %>%
       as("CsparseMatrix")
-    if (transposed){
+    if (transposed) {
       dat %<>% Matrix::t()
     }
     return(dat)
@@ -140,39 +147,39 @@ extractJointCountMatrix.Seurat <- function(object, raw=TRUE, transposed=TRUE, sp
 
   slot <- object@misc$data.slot
   dat <- NULL
-  if (is.null(slot) || slot == 'scale.data') {
-    dat <- Seurat::GetAssayData(object, slot='scale.data', assay=object@misc$assay.name)
+  if (is.null(slot) || slot == "scale.data") {
+    dat <- Seurat::GetAssayData(object, slot = "scale.data", assay = object@misc$assay.name)
     dims <- dim(dat)
     dat.na <- all(dims == 1) && all(is.na(x = dat))
     if (any(dims == 0) || dat.na) {
-      slot <- 'data'
+      slot <- "data"
     }
   }
 
-  if (slot == 'data') {
-    dat <- Seurat::GetAssayData(object, slot='data', assay=object@misc$assay.name)
+  if (slot == "data") {
+    dat <- Seurat::GetAssayData(object, slot = "data", assay = object@misc$assay.name)
   }
 
   if (is.null(dat) || any(dim(dat) == 0)) {
     stop("Can't access data slot ", slot)
   }
 
-  if (transposed){
+  if (transposed) {
     dat %<>% Matrix::t()
   }
-  if (is.matrix(dat) && sparse){
+  if (is.matrix(dat) && sparse) {
     dat %<>% as("CsparseMatrix")
   }
   return(dat)
 }
 
 #' @rdname extractJointCountMatrix
-extractJointCountMatrix.dgCMatrix <- function(object, raw=TRUE) {
-  if (attr(object, 'raw') == raw){
+extractJointCountMatrix.dgCMatrix <- function(object, raw = TRUE) {
+  if (attr(object, "raw") == raw) {
     return(object)
   }
 
-  if (!attr(object, 'raw') && raw){
+  if (!attr(object, "raw") && raw) {
     stop("Cannot extract raw matrix from a normalized dgCMatrix")
   }
 
@@ -187,24 +194,28 @@ extractJointCountMatrix.dgCMatrix <- function(object, raw=TRUE) {
 #' @param n.genes numeric Number of overdispersed genes to extract (default=NULL)
 #' @rdname extractOdGenes
 #' @export
-extractOdGenes <- function(object, n.genes=NULL) UseMethod("extractOdGenes", object)
+extractOdGenes <- function(object, n.genes = NULL) UseMethod("extractOdGenes", object)
 
 #' @rdname extractOdGenes
-extractOdGenes.Conos <- function(object, n.genes=NULL) {
+extractOdGenes.Conos <- function(object, n.genes = NULL) {
   getOdGenesUniformly <- utils::getFromNamespace("getOdGenesUniformly", "conos")
   return(getOdGenesUniformly(object$samples, n.genes))
 }
 
 #' @rdname extractOdGenes
-extractOdGenes.Seurat <- function(object, n.genes=NULL) {
-  if (is.null(object@assays[[object@misc$assay.name]]@meta.features$vst.variance.standardized)){
-    stop("The data object doesn't have gene variance info.",
-         "Please, run FindVariableFeatures(assay='",
-         object@misc$assay.name,
-         "', selection.method='vst') first")
+extractOdGenes.Seurat <- function(object, n.genes = NULL) {
+  if (is.null(object@assays[[object@misc$assay.name]]@meta.features$vst.variance.standardized)) {
+    stop(
+      "The data object doesn't have gene variance info.",
+      "Please, run FindVariableFeatures(assay='",
+      object@misc$assay.name,
+      "', selection.method='vst') first"
+    )
   }
   genes <- object@assays[[object@misc$assay.name]]@meta.features %>%
-    {rownames(.)[order(.$vst.variance.standardized, decreasing=TRUE)]} %>%
+    {
+      rownames(.)[order(.$vst.variance.standardized, decreasing = TRUE)]
+    } %>%
     head(n.genes %||% length(.))
 
   return(genes)
@@ -234,10 +245,11 @@ extractSamplePerCell.Seurat <- function(object) {
 
 extractSampleGroups <- function(object, ref.level, target.level) {
   samp.names <- unique(extractSamplePerCell(object))
-  if(!any(grep(ref.level, con.names))) {
+  if (!any(grep(ref.level, con.names))) {
     stop("'ref.level' not in the data object sample names.")
   }
-  sg <- grepl(ref.level, samp.names) %>% ifelse(ref.level, target.level) %>%
+  sg <- grepl(ref.level, samp.names) %>%
+    ifelse(ref.level, target.level) %>%
     setNames(samp.names)
   return(sg)
 }
@@ -259,10 +271,10 @@ extractEmbedding.Conos <- function(object) {
 
 #' @rdname extractEmbedding
 extractEmbedding.Seurat <- function(object) {
-  if (!is.null(object@reductions$umap)){
+  if (!is.null(object@reductions$umap)) {
     return(object@reductions$umap@cell.embeddings)
   }
-  if (length(object@reductions) == 0){
+  if (length(object@reductions) == 0) {
     return(NULL)
   }
   return(object@reductions[[1]]@cell.embeddings)
@@ -286,10 +298,10 @@ extractGeneExpression.Conos <- function(object, gene) {
 
 #' @rdname extractGeneExpression
 extractGeneExpression.Seurat <- function(object, gene) {
-  return(extractJointCountMatrix(object, raw=FALSE, transposed=FALSE, sparse=FALSE)[gene,])
+  return(extractJointCountMatrix(object, raw = FALSE, transposed = FALSE, sparse = FALSE)[gene, ])
 }
 
 #' @rdname extractGeneExpression
 extractGeneExpression.dgCMatrix <- function(object, gene) {
-  return(object[,gene])
+  return(object[, gene])
 }
