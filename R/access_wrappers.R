@@ -89,7 +89,7 @@ extractRawCountMatrices.Seurat <- function(object, transposed = TRUE) {
     {
       split(names(.), .)
     } %>%
-    lapply(function(cids) object[[object@misc$assay.name]]$counts[, cids])
+    lapply(function(cids) Seurat::GetAssayData(object, layer = object@misc$data.slot)[, cids])
   if (transposed) {
     cms <- lapply(cms, Matrix::t)
   }
@@ -143,7 +143,7 @@ extractJointCountMatrix.Seurat <- function(object, raw = TRUE, transposed = TRUE
     return(dat)
   }
 
-  layer <- object@misc$data.layer
+  layer <- object@misc$data.slot
   dat <- NULL
   if (is.null(layer) || layer == "scale.data") {
     dat <- Seurat::GetAssayData(object, layer = "scale.data", assay = object@misc$assay.name)
